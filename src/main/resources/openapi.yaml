@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: URL Shortener API
+  version: "1.0"
+  description: This API provides URL shortening capabilities with custom IDs and TTL support.
+  contact:
+    name: URL Shortener API
+    url: https://github.com/darkestsoul99/url-shortener
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /shorten:
+    post:
+      summary: Create a short URL
+      description: Creates a shortened URL from a long URL. Optionally accepts a custom ID and TTL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlRequest'
+      responses:
+        '200':
+          description: URL successfully shortened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Url'
+        '409':
+          description: Custom ID already exists
+        '400':
+          description: Invalid input
+
+  /{id}:
+    get:
+      summary: Redirect to long URL
+      description: Redirects to the original long URL using the short URL ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Short URL ID
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the long URL
+        '404':
+          description: Short URL not found
+
+    delete:
+      summary: Delete a short URL
+      description: Deletes a shortened URL by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Short URL ID to delete
+          schema:
+            type: string
+      responses:
+        '200':
+          description: URL successfully deleted
+        '404':
+          description: URL not found
+
+    put:
+      summary: Update a short URL
+      description: Updates the long URL or TTL of an existing shortened URL
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Short URL ID to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlRequest'
+      responses:
+        '200':
+          description: URL successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Url'
+        '404':
+          description: URL not found
+
+  /urls:
+    get:
+      summary: Get all short URLs
+      description: Retrieves a list of all shortened URLs.
+      responses:
+        '200':
+          description: List of all short URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Url'
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete all short URLs
+      description: Deletes all shortened URLs.
+      responses:
+        '200':
+          description: All short URLs successfully deleted
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    UrlRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The short URL identifier (required for updates)
+        longUrl:
+          type: string
+          description: The long URL to be shortened
+        ttlHours:
+          type: integer
+          description: Time-to-live in hours (optional)
+      required:
+        - longUrl
+
+    Url:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The short URL identifier
+        longUrl:
+          type: string
+          description: The original long URL
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiration timestamp (optional)
