@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
 
+import com.majoriver.urlshortener.exception.UrlExpiredException;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,9 +73,20 @@ public class UrlService {
     }
 
     @Scheduled(fixedRate = 3600000)
+    public void cleanUpExpiredUrls() {
+        deleteExpiredUrls();
+    }
+
     public void deleteExpiredUrls() {
         logger.debug("Deleting expired URLs");
         urlRepository.deleteByExpiresAtBefore(LocalDateTime.now());
+    }
+
+    public void isUrlExpired(Url url) {
+        if (url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            deleteExpiredUrls();
+            throw new UrlExpiredException("This URL has expired and has been deleted.");
+        }
     }
 
     public Url updateUrl(String id, String longUrl, Integer ttlHours) {

@@ -48,6 +48,7 @@ public class UrlController {
     public ResponseEntity<Void> redirectToLongUrl(@PathVariable String id) {
         logger.info("Received redirect request for ID: {}", id);
         Url url = urlService.getUrl(id).orElseThrow(() -> new EntityNotFoundException("Redirect not found"));
+        urlService.isUrlExpired(url);
         logger.info("Redirecting {} to {}", id, url.getLongUrl());
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(url.getLongUrl()))

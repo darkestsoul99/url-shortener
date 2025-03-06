@@ -57,6 +57,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ErrorResponse("Invalid request", ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(UrlExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleUrlExpiredException(UrlExpiredException ex) {
+        logger.error("URL expired: {}", ex.getMessage());
+        return new ResponseEntity<>(new ErrorResponse("URL expired", ex.getMessage()), HttpStatus.GONE); // HTTP 410 Gone
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         logger.error("Unexpected error: {}", ex.getMessage());
