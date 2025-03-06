@@ -3,6 +3,9 @@ package com.majoriver.urlshortener.controller;
 import java.net.URI;
 import java.util.List;
 
+import com.majoriver.urlshortener.validation.PatchGroup;
+import com.majoriver.urlshortener.validation.PostGroup;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,11 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import com.majoriver.urlshortener.model.Url;
 import com.majoriver.urlshortener.service.UrlService;
 import com.majoriver.urlshortener.dto.UrlRequest;
-
-import jakarta.validation.Valid;
+import com.majoriver.urlshortener.dto.SuccessResponse;
 
 @RestController
-@Validated
 public class UrlController {
     private static final Logger logger = LoggerFactory.getLogger(UrlController.class);
 
@@ -28,84 +29,54 @@ public class UrlController {
     }
 
     @PostMapping("/shorten")
-    public ResponseEntity<?> createShortUrl(@Valid @RequestBody UrlRequest urlRequest) {
+    public ResponseEntity<Url> createShortUrl(@Validated({PostGroup.class}) @RequestBody UrlRequest urlRequest) {
         logger.info("Received request to shorten URL: {}", urlRequest.getLongUrl());
-        try {
-            Url url = urlService.createShortUrl(urlRequest.getId(), urlRequest.getLongUrl(), urlRequest.getTtlHours());
-            logger.info("Successfully created short URL with ID: {}", url.getId());
-            return ResponseEntity.ok(url);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Failed to create short URL: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        Url url = urlService.createShortUrl(urlRequest.getId(), urlRequest.getLongUrl(), urlRequest.getTtlHours());
+        logger.info("Successfully created short URL with ID: {}", url.getId());
+        return ResponseEntity.ok(url);
     }
 
     @GetMapping("/urls")
-    public ResponseEntity<?> getAllShortUrls() {
+    public ResponseEntity<List<Url>> getAllShortUrls() {
         logger.info("Received request to get all short URLs");
-        try {
-            List<Url> urls = urlService.getAllUrls();
-            logger.info("Successfully fetched {} short URLs", urls.size());
-            return ResponseEntity.ok(urls);
-        } catch (Exception e) {
-            logger.error("Failed to fetch short URLs: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch short URLs");
-        }
+        List<Url> urls = urlService.getAllUrls();
+        logger.info("Successfully fetched {} short URLs", urls.size());
+        return ResponseEntity.ok(urls);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> redirectToLongUrl(@PathVariable String id) {
+    public ResponseEntity<Void> redirectToLongUrl(@PathVariable String id) {
         logger.info("Received redirect request for ID: {}", id);
-        return urlService.getUrl(id)
-                .map(url -> {
-                    logger.info("Redirecting {} to {}", id, url.getLongUrl());
-                    return ResponseEntity.status(HttpStatus.FOUND)
-                            .location(URI.create(url.getLongUrl()))
-                            .build();
-                })
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Redirect not found"));
+        Url url = urlService.getUrl(id).orElseThrow(() -> new EntityNotFoundException("Redirect not found"));
+        logger.info("Redirecting {} to {}", id, url.getLongUrl());
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url.getLongUrl()))
+                .build();
     }
 
     @DeleteMapping("/urls")
-    public ResponseEntity<?> deleteAllShortUrls() {
+    public ResponseEntity<Object> deleteAllShortUrls() {
         logger.info("Received request to delete all short URLs");
-        try {
-            urlService.deleteAllUrls();
-            logger.info("Successfully deleted all short URLs");
-            return ResponseEntity.ok("All URLs deleted successfully");
-        } catch (Exception e) {
-            logger.error("Failed to delete all short URLs: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete all URLs");
-        }
+        urlService.deleteAllUrls();
+        logger.info("Successfully deleted all short URLs");
+        return ResponseEntity.ok(new SuccessResponse("Successfully deleted all short URLs"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUrl(@PathVariable String id) {
+    public ResponseEntity<Object> deleteUrl(@PathVariable String id) {
         logger.info("Received request to delete URL with ID: {}", id);
-        try {
-            urlService.deleteUrl(id);
-            logger.info("Successfully deleted URL with ID: {}", id);
-            return ResponseEntity.ok("Successfully deleted URL with ID: " + id);
-        } catch (Exception e) {
-            logger.warn("Failed to delete URL with ID: {} : {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete URL with ID: " + id);
-        }
+        urlService.deleteUrl(id);
+        logger.info("Successfully deleted URL with ID: {}", id);
+        return ResponseEntity.ok(new SuccessResponse("Successfully deleted URL with ID: " + id));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUrl(
+    @PatchMapping("/{id}")
+    public ResponseEntity<Url> updateUrl(
             @PathVariable String id,
-            @Valid @RequestBody UrlRequest urlRequest) {
+            @Validated({PatchGroup.class}) @RequestBody UrlRequest urlRequest) {
         logger.info("Received request to update URL with ID: {}", id);
-
-
-        try {
-            Url url = urlService.updateUrl(id, urlRequest.getLongUrl(), urlRequest.getTtlHours());
-            logger.info("Successfully updated URL with ID: {}", id);
-            return ResponseEntity.ok(url);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Failed to update URL: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        Url url = urlService.updateUrl(id, urlRequest.getLongUrl(), urlRequest.getTtlHours());
+        logger.info("Successfully updated URL with ID: {}", id);
+        return ResponseEntity.ok(url);
     }
 }

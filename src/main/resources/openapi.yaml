@@ -22,6 +22,18 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UrlRequest'
+            examples:
+              default:
+                summary: Default example
+                value:
+                  longUrl: "https://example.com/very-long-url"
+                  ttlHours: 48
+              withCustomId:
+                summary: Custom ID example
+                value:
+                  id: "custom123"
+                  longUrl: "https://example.com/page"
+                  ttlHours: -1
       responses:
         '200':
           description: URL successfully shortened
@@ -67,7 +79,7 @@ paths:
         '404':
           description: URL not found
 
-    put:
+    patch:
       summary: Update a short URL
       description: Updates the long URL or TTL of an existing shortened URL
       parameters:
@@ -83,6 +95,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UrlRequest'
+            examples:
+              updateLongUrl:
+                summary: Update long URL only
+                value:
+                  longUrl: "https://example.com/updated-url"
+              updateTTL:
+                summary: Extend TTL to infinite
+                value:
+                  ttlHours: -1
       responses:
         '200':
           description: URL successfully updated
@@ -131,7 +152,11 @@ components:
           description: The long URL to be shortened
         ttlHours:
           type: integer
-          description: Time-to-live in hours (optional)
+          description: >
+            Time-to-live in hours. If provided:
+              - A positive number sets the expiration time.
+              - `0` is not allowed.
+              - `-1` means the URL will never expire (infinite TTL).
       required:
         - longUrl
 
