@@ -33,7 +33,7 @@ paths:
                 value:
                   id: "custom123"
                   longUrl: "https://example.com/page"
-                  ttlHours: -1
+                  ttlHours: 0
       responses:
         '200':
           description: URL successfully shortened
@@ -60,8 +60,10 @@ paths:
       responses:
         '302':
           description: Redirect to the long URL
+        '410':
+          description: URL expired
         '404':
-          description: Short URL not found
+          description: URL not found
 
     delete:
       summary: Delete a short URL
@@ -103,7 +105,7 @@ paths:
               updateTTL:
                 summary: Extend TTL to infinite
                 value:
-                  ttlHours: -1
+                  ttlHours: 0
       responses:
         '200':
           description: URL successfully updated
@@ -135,7 +137,7 @@ paths:
       description: Deletes all shortened URLs.
       responses:
         '200':
-          description: All short URLs successfully deleted
+          description: Successfully deleted all short URLs
         '500':
           description: Internal server error
 
