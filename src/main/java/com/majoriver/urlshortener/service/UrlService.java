@@ -79,7 +79,7 @@ public class UrlService {
 
     public void deleteExpiredUrls() {
         logger.debug("Deleting expired URLs");
-        urlRepository.deleteByExpiresAtBefore(LocalDateTime.now());
+        urlRepository.deleteAllByExpiresAtBefore(LocalDateTime.now());
     }
 
     public void isUrlExpired(Url url) {
